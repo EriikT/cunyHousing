@@ -2,19 +2,16 @@
    app.js — CUNYHousing JavaScript
    Handles all the logic for searching, filtering, and
    displaying housing results on the page.
-   Linked from index.html via <script src="app.js"></script>
    ============================================================ */
 
-
 /* ============================================================
-   HOUSING DATA
-   This is the NYCHA housing data sourced from NYC Open Data.
-   Each object represents one NYCHA development with:
+   HOUSING DATA — sourced from NYC Open Data (NYCHA)
+   Each object = one NYCHA development
    - name: development name
-   - borough: which borough it's in (used for filtering)
-   - zip: zip code (for reference)
-   - address: full street address
-   - units: total number of apartments in the development
+   - borough: used for filtering
+   - zip: zip code
+   - address: street address
+   - units: total apartments in the development
    - rent: estimated starting rent per month
    ============================================================ */
 const allData = [
@@ -89,59 +86,48 @@ const allData = [
   {name:"Park Hill Apartments",borough:"STATEN ISLAND",zip:"10304",address:"30 Park Hill Ave, Staten Island",units:538,rent:900}
 ];
 
-/* ── State variables ──
-   These track the current state of the search results */
-let visibleCount = 12;    // How many cards to show at once
-let currentResults = [];  // The filtered results from the last search
+/* State variables */
+let visibleCount = 12;   // How many cards to show at once
+let currentResults = []; // Filtered results from last search
 
 
 /* ============================================================
-   NAVIGATION FUNCTIONS
+   NAVIGATION
    ============================================================ */
 
-/* toggleMenu — opens/closes the mobile hamburger nav drawer */
+/* toggleMenu — opens/closes the mobile hamburger nav */
 function toggleMenu() {
   document.getElementById('hamburger').classList.toggle('open');
   document.getElementById('nav-mobile').classList.toggle('open');
 }
 
-/* showPage — switches between Home, Resources, and About pages
-   by adding/removing the 'active' class */
+/* showPage — switches between Home, Resources, and About */
 function showPage(page) {
-  // Hide all pages
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-
-  // Remove active state from all nav links (both desktop and mobile)
   ['home', 'resources', 'about'].forEach(p => {
     document.getElementById('nav-' + p + '-d').classList.remove('active');
     document.getElementById('nav-' + p + '-m').classList.remove('active');
   });
-
-  // Show the selected page
   document.getElementById('page-' + page).classList.add('active');
-
-  // Highlight the correct nav link
   document.getElementById('nav-' + page + '-d').classList.add('active');
   document.getElementById('nav-' + page + '-m').classList.add('active');
-
-  // Scroll back to top when switching pages
   window.scrollTo(0, 0);
 }
 
 
 /* ============================================================
-   FILTER INTERACTION FUNCTIONS
-   These prevent campus and borough filters from conflicting
+   FILTER INTERACTIONS
+   Prevent campus and borough from both being selected at once
    ============================================================ */
 
-/* onCampusChange — when a campus is selected, clear the borough dropdown */
+/* When campus is chosen, clear the borough dropdown */
 function onCampusChange() {
   if (document.getElementById('campus-select').value) {
     document.getElementById('borough-select').value = '';
   }
 }
 
-/* onBoroughChange — when a borough is selected, clear the campus dropdown */
+/* When borough is chosen, clear the campus dropdown */
 function onBoroughChange() {
   if (document.getElementById('borough-select').value) {
     document.getElementById('campus-select').value = '';
@@ -150,28 +136,22 @@ function onBoroughChange() {
 
 
 /* ============================================================
-   SEARCH FUNCTION
-   Called when the user clicks the "Search" button.
-   Reads the filter values, filters the data, updates the UI.
+   SEARCH
+   Reads filters, filters the data, updates the stats and results
    ============================================================ */
 function search() {
-  // Get the selected campus (it stores the borough value e.g. "MANHATTAN")
   const campusEl = document.getElementById('campus-select');
   const campusBorough = campusEl.value.toUpperCase();
 
-  // Use campus borough if selected, otherwise use the borough dropdown
+  // Use campus borough if selected, otherwise use borough dropdown
   const borough = campusBorough || document.getElementById('borough-select').value.toUpperCase();
-
-  // Get the selected price range
   const price = document.getElementById('price-select').value;
 
-  // Start with all data, then filter down
+  // Start with all data then filter down
   let results = [...allData];
 
-  // Filter by borough (campus selection maps to a borough)
-  if (borough) {
-    results = results.filter(d => d.borough === borough);
-  }
+  // Filter by borough
+  if (borough) results = results.filter(d => d.borough === borough);
 
   // Filter by price range
   if (price) {
@@ -185,54 +165,50 @@ function search() {
     });
   }
 
-  // Save results and reset visible count
   currentResults = results;
   visibleCount = 12;
 
-  // Calculate total units across all results
+  // Calculate total units across all filtered results
   const totalUnits = results.reduce((sum, d) => sum + d.units, 0);
 
-  // Determine area label for the stats card
+  // Label for the "Area searched" stat
   const areaLabel = campusBorough
     ? campusBorough.charAt(0) + campusBorough.slice(1).toLowerCase()
     : borough
     ? borough.charAt(0) + borough.slice(1).toLowerCase()
     : 'All NYC';
 
-  // Show the stats row and update numbers
+  // Show stats and update numbers
   document.getElementById('stats-row').style.display = 'grid';
   document.getElementById('stat-count').textContent = results.length.toLocaleString();
   document.getElementById('stat-units').textContent = totalUnits.toLocaleString();
   document.getElementById('stat-area').textContent = areaLabel;
 
-  // Render the listing cards
   renderResults();
 }
 
 
 /* ============================================================
-   RENDER RESULTS FUNCTION
-   Builds and injects the HTML for listing cards into the page.
-   Called after search() and showMore().
+   RENDER RESULTS
+   Builds and injects the listing card HTML into the page
    ============================================================ */
 function renderResults() {
   const area = document.getElementById('results-area');
 
-  // Show a message if no results match the filters
+  // Show empty state if no results
   if (!currentResults.length) {
     area.innerHTML = '<div class="state-msg"><h3>No results found</h3><p>Try a different campus, borough, or price range.</p></div>';
     return;
   }
 
-  // Check if user searched by campus (to show the purple campus tag)
   const campusEl = document.getElementById('campus-select');
   const hasCampus = campusEl.value !== '';
   const campusName = hasCampus ? campusEl.options[campusEl.selectedIndex].text : '';
 
-  // Only show the first `visibleCount` results
+  // Only render up to visibleCount cards
   const show = currentResults.slice(0, visibleCount);
 
-  // Build HTML for each listing card
+  // Build HTML for each card
   const cards = show.map(d => `
     <div class="listing-card">
       <div class="listing-top">
@@ -252,23 +228,16 @@ function renderResults() {
       </a>
     </div>`).join('');
 
-  // Show "Show more" button if there are more results to load
+  // Show "Show more" button if more results exist
   const showMore = currentResults.length > visibleCount
-    ? `<button class="show-more-btn" onclick="showMore()">
-         Show more (${currentResults.length - visibleCount} remaining)
-       </button>`
+    ? `<button class="show-more-btn" onclick="showMore()">Show more (${currentResults.length - visibleCount} remaining)</button>`
     : '';
 
-  // Show different banners depending on how the user searched
+  // Different banner for campus vs borough search
   const banner = hasCampus
-    ? `<div class="campus-banner">
-         Showing NYCHA developments in the same borough as <strong>${campusName}</strong>.
-       </div>`
-    : `<div class="info-banner">
-         These are NYCHA developments in your area. Click any listing to check for open applications.
-       </div>`;
+    ? `<div class="campus-banner">Showing NYCHA developments in the same borough as <strong>${campusName}</strong>.</div>`
+    : `<div class="info-banner">These are NYCHA developments in your area. Click any listing to check for open applications.</div>`;
 
-  // Inject everything into the results area
   area.innerHTML = `
     ${banner}
     <div class="results-header">
@@ -281,10 +250,10 @@ function renderResults() {
 
 
 /* ============================================================
-   SHOW MORE FUNCTION
-   Loads 12 more results when the "Show more" button is clicked
+   SHOW MORE
+   Loads 12 more cards when button is clicked
    ============================================================ */
 function showMore() {
-  visibleCount += 12; // Increase how many cards are visible
-  renderResults();    // Re-render with updated count
+  visibleCount += 12;
+  renderResults();
 }
