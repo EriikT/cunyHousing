@@ -228,7 +228,7 @@ function renderResults() {
         ${hasCampus ? `<span class="tag tag-campus">Near ${campusName}</span>` : ''}
       </div>
       <div class="availability-note">${d.isStudent ? 'Contact the student who posted this listing' : 'Contact development or check NYC Housing Connect for open units'}</div>
-      <a href="${d.isStudent ? 'mailto:' + d.contact : 'https://housingconnect.nyc.gov'}" target="_blank" class="connect-btn">
+      <a href="${d.isStudent ? 'mailto:' + d.contact : ' https://housingconnect.nyc.gov/PublicWeb/auth/sign-up'}" target="_blank" class="connect-btn">
         ${d.isStudent ? 'Contact Student' : 'Check available units on NYC Housing Connect'}
       </a>
     </div>`).join('');
